@@ -1,34 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>first page</title>
-    <url>/49103/</url>
+    <title>博客搭建</title>
+    <url>/undefined/</url>
     <content><![CDATA[]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/16107/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<a id="more"></a>
-
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
       <categories>
         <category>教程</category>
       </categories>
+  </entry>
+  <entry>
+    <title>零拷贝</title>
+    <url>/6ebbfb41/</url>
+    <content><![CDATA[<h3 id="磁盘与内存之间的数据传输"><a href="#磁盘与内存之间的数据传输" class="headerlink" title="磁盘与内存之间的数据传输"></a>磁盘与内存之间的数据传输</h3><p>Linux 提供了轮询、I/O 中断以及 DMA 传输这 3 种磁盘与主存之间的数据传输机制。</p>
+<h4 id="I-O-中断原理"><a href="#I-O-中断原理" class="headerlink" title="I/O 中断原理"></a>I/O 中断原理</h4><p>每次用户进程读取磁盘数据时，都需要 CPU 中断，每次的 I/O 中断都导致 CPU 的上下文切换。</p>
+<img src="C:\Users\admin\Typora\Picture\image-20200713140512843.png" alt="image-20200713140512843" style="zoom:67%;" />
+
+<ul>
+<li>用户进程发起 <code>read()</code> 系统调用读取数据，由用户态切换为内核态，然后一直阻塞等待数据的返回。</li>
+<li>CPU对磁盘发起 I/O 请求，将磁盘数据先放入磁盘控制器缓冲区。</li>
+<li>数据准备完成以后，磁盘向 CPU 发起 I/O 中断。</li>
+<li>CPU 将磁盘缓冲区中的数据拷贝到内核缓冲区，然后再从内核缓冲区拷贝到用户缓冲区。</li>
+<li>用户进程由内核态切换回用户态，解除阻塞状态。</li>
+</ul>
+<h4 id="DMA-传输原理"><a href="#DMA-传输原理" class="headerlink" title="DMA 传输原理"></a>DMA 传输原理</h4><p>DMA 的全称叫直接内存存取（Direct Memory Access），是一种允许外围设备（硬件子系统）直接访问系统主内存的机制。也就是说，基于 DMA 访问方式，系统主内存于硬盘或网卡之间的数据传输可以绕开 CPU 的全程调度。</p>
+<p>整个数据传输操作是在 DMA 控制器的控制下进行的。CPU 除了在数据传输开始和结束时做一点处理外（开始和结束时候要做中断处理），在传输过程中 CPU 可以继续进行其他的工作。这样在大部分时间里，CPU 计算和 I/O 操作都处于并行操作，使整个计算机系统的效率大大提高。</p>
+<img src="C:\Users\admin\Typora\Picture\image-20200713140752123.png" alt="image-20200713140752123" style="zoom:67%;" />
+
+<ul>
+<li><p>用户进程发起 <code>read()</code> 系统调用读取数据，由用户态切换为内核态，然后一直阻塞等待数据的返回。</p>
+</li>
+<li><p>CPU 在接收到指令以后对 DMA 磁盘控制器发起调度指令。</p>
+</li>
+<li><p>DMA 磁盘控制器对磁盘发起 I/O 请求，将磁盘数据先放入磁盘控制器缓冲区，CPU 全程不参与此过程。</p>
+</li>
+<li><p>数据读取完成后，DMA 磁盘控制器会接受到磁盘的通知，将数据从磁盘控制器缓冲区拷贝到内核缓冲区。</p>
+</li>
+<li><p>DMA 磁盘控制器向 CPU 发出数据读完的信号，由 CPU 负责将数据从内核缓冲区拷贝到用户缓冲区。</p>
+</li>
+<li><p>用户进程由内核态切换回用户态，解除阻塞状态。</p>
+</li>
+</ul>
+<h3 id="传统-IO-方式"><a href="#传统-IO-方式" class="headerlink" title="传统 IO 方式"></a>传统 IO 方式</h3><img src="C:\Users\admin\Typora\Picture\image-20200713141301897.png" alt="image-20200713141301897" style="zoom:67%;" />
+
+<p>基于传统的 I/O 读取方式，<code>read()/write()</code> 系统调用会触发 2 次上下文切换，1 次 DMA 拷贝和 1 次 CPU 拷贝。</p>
+<ul>
+<li><p>用户进程通过 <code>read()</code> 方法向内核发起系统调用，上下文从用户态切换为内核态。</p>
+</li>
+<li><p>DMA 控制器将数据从硬盘拷贝到内核缓冲区中。</p>
+</li>
+<li><p>CPU 将缓冲区中的数据拷贝到用户缓冲区。</p>
+</li>
+<li><p>上下文从内核态切换回用户态，<code>read()</code> 调用执行返回。</p>
+</li>
+</ul>
+<h3 id="零拷贝方式"><a href="#零拷贝方式" class="headerlink" title="零拷贝方式"></a>零拷贝方式</h3><h4 id="mmap"><a href="#mmap" class="headerlink" title="mmap"></a>mmap</h4><p><code>mmap</code> 是 Linux 提供的一种内存映射文件方法，即将一个进程的地址空间中的一段虚拟地址映射到磁盘文件地址。</p>
+<p>使用 <code>mmap</code> 的目的是将内核中读缓冲区的地址与用户空间的缓冲区进行映射，从而实现内核缓冲区与应用程序内存的共享，省去了将数据从内核读缓冲区拷贝到用户缓冲区的过程，然而内核读缓冲区仍需将数据到内核写缓冲区，大致的流程如下图所示：</p>
+<img src="C:\Users\admin\Typora\Picture\image-20200713143920677.png" alt="image-20200713143920677" style="zoom:67%;" />
+
+<p>基于 <code>mmap</code> 系统调用的零拷贝方式，整个拷贝过程会发生 4 次上下文切换，1 次 CPU 拷贝和 2 次 DMA 拷贝，用户程序读写数据的流程如下：</p>
+<ol>
+<li>用户进程通过 <code>mmap()</code> 函数向内核发起系统调用，上下文从用户态切换为内核态。</li>
+<li>将用户缓冲区与内核缓冲区进行内存地址映射。</li>
+<li>CPU 利用 DMA 控制器将数据从主存或硬盘拷贝到内核空间的读缓冲区。</li>
+<li>上下文从内核态切换回用户态，<code>mmap</code> 系统调用执行返回。</li>
+</ol>
+<h4 id="sendfile"><a href="#sendfile" class="headerlink" title="sendfile"></a>sendfile</h4><p>通过 <code>sendfile</code> 系统调用，数据可以直接在内核空间内部进行 I/O 传输，从而省去了数据在用户空间和内核空间之间的来回拷贝。</p>
+<img src="C:\Users\admin\Typora\Picture\image-20200713144244461.png" alt="image-20200713144244461" style="zoom:67%;" />
+
+<p>基于 <code>sendfile</code> 系统调用的零拷贝方式，整个拷贝过程会发生 2 次上下文切换，1 次 CPU 拷贝和 2 次 DMA 拷贝，用户程序读写数据的流程如下：</p>
+<ol>
+<li>用户进程通过 <code>sendfile()</code> 函数向内核发起系统调用，上下文从用户态切换为内核态。</li>
+<li>DMA 控制器将数据从主存或硬盘拷贝到内核空间的读缓冲区。</li>
+<li>CPU 将读缓冲区中的数据拷贝到的网络缓冲区。</li>
+<li>DMA 控制器将数据从网络缓冲区拷贝到网卡进行数据传输。</li>
+<li>上下文从内核态切换回用户态，<code>sendfile()</code> 系统调用执行返回。</li>
+</ol>
+<p>相比较于 <code>mmap</code> 内存映射的方式，<code>sendfile</code> 少了 2 次上下文切换，但是仍然有 1 次 CPU 拷贝操作。<code>sendfile</code> 存在的问题是用户程序不能对数据进行修改，而只是单纯地完成了一次数据传输过程。</p>
+<h4 id="splice"><a href="#splice" class="headerlink" title="splice"></a>splice</h4><p>splice 系统调用可以在内核空间的读缓冲区和网络缓冲区之间建立管道，从而避免了两者之间的 CPU 拷贝操作。</p>
+<img src="C:\Users\admin\Typora\Picture\image-20200713144926163.png" alt="image-20200713144926163" style="zoom:67%;" />
+
+<p>基于 splice 系统调用的零拷贝方式，整个拷贝过程会发生 2 次上下文切换以及 2 次 DMA 拷贝，用户程序读写数据的流程如下：</p>
+<ol>
+<li>用户进程通过 <code>splice()</code> 函数向内核发起系统调用，上下文从用户态切换为内核态。</li>
+<li>DMA 控制器将数据从主存或硬盘拷贝到内核空间的读缓冲区。</li>
+<li>CPU 在内核空间的读缓冲区和网络缓冲区之间建立管道。</li>
+<li>DMA 控制器将数据从网络缓冲区拷贝到网卡进行数据传输。</li>
+<li>上下文从内核态切换回用户态，<code>splice()</code> 系统调用执行返回。</li>
+</ol>
+<p>splice 拷贝方式也同样存在用户程序不能对数据进行修改的问题。除此之外，它使用了 Linux 的管道缓冲机制，可以用于任意两个文件描述符中传输数据，但是它的两个文件描述符参数中有一个必须是管道设备。</p>
+<h3 id="零拷贝实现"><a href="#零拷贝实现" class="headerlink" title="零拷贝实现"></a>零拷贝实现</h3><ul>
+<li><p>RocketMQ：<code>mmap</code> + write，适用于业务级消息这种小块文件的数据持久化和传输。</p>
+</li>
+<li><p>Kafka：<code>sendfile</code>，适用于系统日志消息这种高吞吐量的大块文件的数据持久化和传输。</p>
+<blockquote>
+<p>Kafka 的索引文件使用的是 <code>mmap</code> + write 方式，数据文件使用的是 <code>sendfile</code> 方式。</p>
+</blockquote>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
       <tags>
-        <tag>hexo</tag>
+        <tag>操作系统</tag>
+        <tag>零拷贝</tag>
       </tags>
   </entry>
 </search>
